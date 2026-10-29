@@ -264,6 +264,10 @@
       font-size: 0.8rem;
       font-weight: 400;
       width: 165px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       text-align: center;
       border: 1px solid #333;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
@@ -934,7 +938,7 @@
           // 꽃을 던지는 순간 YOU가 즉시 타격받음. 마지막 대사에서는 공격 생략.
           if (!isFinalLine) {
             triggerWeaponAnim('flowerWeapon', 'flower-anim');
-            playSound('flower');
+            playSound('punch');
 
             playerHitCount++;
             if (playerHitCount % 2 === 0 && playerHeartsLeft > 1) {
