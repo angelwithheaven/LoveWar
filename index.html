@@ -928,24 +928,32 @@
 
         setTimeout(() => {
           showBubble('cpuBubble', cLine);
-          triggerWeaponAnim('flowerWeapon', 'flower-anim');
 
+          const isFinalLine = currentTurn === cpuLines.length - 1;
+
+          // 마지막 대사인 "개새끼가 꺼져드릴게."에서는 꽃 공격을 하지 않음
+          if (!isFinalLine) {
+            triggerWeaponAnim('flowerWeapon', 'flower-anim');
+          }
+
+          // 경원의 대사가 표시되는 동안 공격 버튼을 계속 비활성화
           setTimeout(() => {
-            playSound('flower');
+            if (!isFinalLine) {
+              playSound('flower');
 
-            playerHitCount++;
-            if (playerHitCount % 2 === 0 && playerHeartsLeft > 1) {
-              playerHeartsLeft--;
-              updateHearts('player', playerHeartsLeft);
+              playerHitCount++;
+              if (playerHitCount % 2 === 0 && playerHeartsLeft > 1) {
+                playerHeartsLeft--;
+                updateHearts('player', playerHeartsLeft);
+              }
+              showDamage(document.getElementById('playerFighter'), '🖤 균열');
+
+              const playerFighter = document.getElementById('playerFighter');
+              playerFighter.classList.add('shake');
+              setTimeout(() => playerFighter.classList.remove('shake'), 300);
             }
-            showDamage(document.getElementById('playerFighter'), '🖤 균열');
-
-            const playerFighter = document.getElementById('playerFighter');
-            playerFighter.classList.add('shake');
-            setTimeout(() => playerFighter.classList.remove('shake'), 300);
 
             addLog(`"${cLine}"`, 'cpu', '차경원: ');
-
             currentTurn++;
 
             if (currentTurn >= playerLines.length) {
@@ -955,7 +963,7 @@
               attackBtn.disabled = false;
               attackBtn.innerText = '공격하기';
             }
-          }, 200);
+          }, 2200);
         }, 2000);
       }, 200);
     }
