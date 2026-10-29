@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BLACK - Word Fight</title>
+  <style>
+    :root {
+      --bg-color: #0d0d0d;
+      --card-bg: #141414;
+      --card-border: #262626;
+      --text-main: #e0e0e0;
+      --text-muted: #737373;
+      --chat-bg: #101010;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 15px;
+      overflow: hidden;
+    }
+
+    /* Hidden YouTube Player */
+    #ytPlayerContainer {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    /* Aesthetic Browser Frame */
+    .browser-frame {
+      width: 100%;
+      max-width: 600px;
+      background: var(--card-bg);
+      border-radius: 14px;
+      border: 1px solid var(--card-border);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Minimal Browser Header */
+    .browser-header {
+      background: #111111;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .browser-dots {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      opacity: 0.8;
+    }
+    .dot-red { background: #ff5f56; }
+    .dot-yellow { background: #ffbd2e; }
+    .dot-green { background: #27c93f; }
+
+    /* 인트로 복귀 X 버튼 */
+    .btn-close-game {
+      background: transparent;
+      border: none;
+      color: #666;
+      font-size: 0.9rem;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 0 4px;
+      transition: color 0.2s;
+      margin-left: 2px;
+      font-family: monospace;
+    }
+    .btn-close-game:hover {
+      color: #ff5f56;
+    }
+
+    .url-bar {
+      flex: 1;
+      background: #1a1a1a;
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-family: monospace;
+      border: 1px solid #222;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .url-text {
+      color: #a0a0a0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      letter-spacing: 0.5px;
+    }
+
+    .bgm-btn {
+      background: transparent;
+      border: 1px solid #333;
+      color: #b0b0b0;
+      font-size: 0.68rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: monospace;
+      transition: all 0.2s;
+    }
+
+    .bgm-btn:hover {
+      background: #262626;
+      color: #fff;
+    }
+
+    .game-content {
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: relative;
+    }
+
+    /* Mood Intro Screen */
+    .intro-screen {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(13, 13, 13, 0.97);
+      backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 20px;
+      z-index: 200;
+      text-align: center;
+      padding: 30px;
+      transition: opacity 0.4s ease, visibility 0.4s ease;
+    }
+
+    .intro-screen.hide {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .intro-title {
+      font-size: 2.2rem;
+      font-weight: 300;
+      letter-spacing: 4px;
+      color: #ffffff;
+      text-transform: uppercase;
+      margin-bottom: -5px;
+    }
+
+    .intro-subtitle {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      letter-spacing: 2px;
+      font-family: monospace;
+    }
+
+    .intro-vs {
+      font-size: 2.5rem;
+      margin: 10px 0;
+      opacity: 0.8;
+      font-weight: 200;
+    }
+
+    .intro-desc {
+      font-size: 0.85rem;
+      color: #999;
+      line-height: 1.6;
+      background: #181818;
+      padding: 14px 20px;
+      border-radius: 8px;
+      border: 1px solid #222;
+      font-weight: 300;
+    }
+
+    .btn-start {
+      background: #ffffff;
+      color: #0d0d0d;
+      border: none;
+      padding: 12px 32px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: transform 0.2s, background 0.2s;
+    }
+
+    .btn-start:hover {
+      transform: translateY(-2px);
+      background: #e0e0e0;
+    }
+
+    /* Arena Layout */
+    .arena {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      min-height: 290px;
+      position: relative;
+      background: #111111;
+      border-radius: 10px;
+      border: 1px solid var(--card-border);
+      padding: 80px 20px 20px 20px;
+      overflow: visible;
+    }
+
+    .fighter {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 44%;
+      position: relative;
+    }
+
+    /* Aesthetic Speech Bubble */
+    .speech-bubble {
+      position: absolute;
+      top: -65px;
+      background: #1e1e1e;
+      color: #f0f0f0;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      font-weight: 400;
+      width: 165px;
+      text-align: center;
+      border: 1px solid #333;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.25s ease;
+      z-index: 50;
+      word-break: keep-all;
+      pointer-events: none;
+    }
+
+    .speech-bubble::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 6px 6px 0;
+      border-style: solid;
+      border-color: #1e1e1e transparent;
+      display: block;
+      width: 0;
+    }
+
+    .speech-bubble.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .avatar {
+      font-size: 4.2rem;
+      margin-bottom: 8px;
+      filter: grayscale(30%) drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+    }
+
+    /* Weapons Animation */
+    .weapon {
+      position: absolute;
+      font-size: 3rem;
+      top: 55%;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 30;
+    }
+
+    .punch-anim {
+      left: 20%;
+      animation: punchAttack 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    }
+
+    .flower-anim {
+      right: 20%;
+      animation: flowerAttack 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    }
+
+    @keyframes punchAttack {
+      0% { opacity: 0; transform: translateX(0) scale(0.5) rotate(-20deg); }
+      50% { opacity: 1; transform: translateX(130px) scale(1.2) rotate(0deg); }
+      100% { opacity: 0; transform: translateX(170px) scale(1) rotate(15deg); }
+    }
+
+    @keyframes flowerAttack {
+      0% { opacity: 0; transform: translateX(0) scale(0.5) rotate(20deg); }
+      50% { opacity: 1; transform: translateX(-130px) scale(1.2) rotate(0deg); }
+      100% { opacity: 0; transform: translateX(-170px) scale(1) rotate(-15deg); }
+    }
+
+    /* 타들어 가는 7개의 심장 게이지 */
+    .heart-gauge-container {
+      width: 100%;
+      background: #0d0d0d;
+      border-radius: 6px;
+      height: 24px;
+      overflow: hidden;
+      border: 1px solid #262626;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      gap: 2px;
+      padding: 0 2px;
+    }
+
+    .heart-icon {
+      font-size: 0.75rem;
+      transition: all 0.3s ease;
+      filter: drop-shadow(0 0 2px rgba(255, 92, 92, 0.6));
+    }
+
+    .heart-icon.blacked {
+      filter: grayscale(100%) brightness(30%);
+      transform: scale(0.8);
+    }
+
+    .name {
+      font-weight: 500;
+      margin-bottom: 6px;
+      font-size: 0.85rem;
+      color: #999;
+      letter-spacing: 0.5px;
+    }
+
+    /* Damage Pop */
+    .damage-pop {
+      position: absolute;
+      top: -15px;
+      color: #ffffff;
+      font-size: 1.8rem;
+      font-weight: 700;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+      animation: floatUp 0.7s ease-out forwards;
+      pointer-events: none;
+      z-index: 60;
+      font-family: monospace;
+    }
+
+    @keyframes floatUp {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      50% { transform: translateY(-15px) scale(1.2); }
+      100% { opacity: 0; transform: translateY(-30px) scale(1); }
+    }
+
+    /* Controls & Chat Console */
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .btn-attack {
+      background: #1f1f1f;
+      color: #e0e0e0;
+      border: 1px solid #333;
+      padding: 14px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-attack:hover {
+      background: #262626;
+      color: #fff;
+      border-color: #444;
+    }
+
+    .btn-attack:active {
+      transform: translateY(1px);
+    }
+
+    .btn-attack:disabled {
+      background: #111;
+      color: #444;
+      border-color: #1a1a1a;
+      cursor: not-allowed;
+    }
+
+    .chat-box-wrapper {
+      background: var(--chat-bg);
+      border-radius: 8px;
+      border: 1px solid var(--card-border);
+      padding: 10px 14px;
+    }
+
+    .chat-header {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-family: monospace;
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid #1a1a1a;
+      padding-bottom: 4px;
+      letter-spacing: 1px;
+    }
+
+    .log-box {
+      height: 90px;
+      overflow-y: auto;
+      font-size: 0.8rem;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .log-box::-webkit-scrollbar {
+      display: none;
+    }
+
+    .log-entry {
+      line-height: 1.4;
+      word-break: break-all;
+      display: flex;
+      gap: 6px;
+      align-items: flex-start;
+    }
+
+    .log-time {
+      color: #444;
+      font-size: 0.7rem;
+    }
+
+    .log-entry.player { color: #cccccc; }
+    .log-entry.player .log-tag { color: #ffffff; font-weight: 600; }
+    
+    .log-entry.cpu { color: #aaaaaa; }
+    .log-entry.cpu .log-tag { color: #e57373; font-weight: 600; }
+
+    .log-entry.system { color: #777777; font-style: italic; }
+
+    /* Game Over Overlay */
+    .overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(13, 13, 13, 0.95);
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 18px;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+
+    .overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .overlay-title {
+      font-size: 2.8rem;
+      font-weight: 300;
+      letter-spacing: 4px;
+      font-family: monospace;
+      color: #fff;
+      text-align: center;
+    }
+
+    .btn-restart {
+      background: #262626;
+      color: #e0e0e0;
+      border: 1px solid #404040;
+      padding: 10px 24px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 1px;
+    }
+
+    .btn-restart:hover {
+      background: #333;
+      color: #fff;
+    }
+
+    .shake {
+      animation: shake 0.3s ease-in-out;
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-8px); }
+      40% { transform: translateX(8px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- YouTube Iframe API Container -->
+  <div id="ytPlayerContainer">
+    <div id="youtubePlayer"></div>
+  </div>
+
+  <div class="browser-frame" id="gameWindow">
+    
+    <!-- Browser Header with [X] Button -->
+    <div class="browser-header">
+      <div class="browser-dots">
+        <div class="dot dot-red"></div>
+        <div class="dot dot-yellow"></div>
+        <div class="dot dot-green"></div>
+        <button class="btn-close-game" onclick="returnToIntro()" title="인트로로 돌아가기">×</button>
+      </div>
+      <div class="url-bar">
+        <span class="url-text">g-dragon / black.mood</span>
+        <button class="bgm-btn" id="bgmToggleBtn" onclick="toggleBgm()">🎵 BGM ON</button>
+      </div>
+    </div>
+
+    <div class="game-content">
+      
+      <!-- Intro Screen -->
+      <div class="intro-screen" id="introScreen">
+        <div>
+          <div class="intro-title">Love War</div>
+          <div class="intro-subtitle">제 200954회 전쟁</div>
+        </div>
+        <div class="intro-vs">— ❤️‍🩹 —</div>
+        <div class="intro-desc">
+          너는 나의 Lover<br>
+          근데 우린 매일 Love War<br>
+          사랑하긴 하는데<br>
+          근데 왜 자꾸 왜
+        </div>
+        <button class="btn-start" onclick="startGame()">ENTER THE MOOD</button>
+      </div>
+
+      <div class="arena" id="arena">
+        <div class="weapon" id="punchWeapon">👊</div>
+        <div class="weapon" id="flowerWeapon">💐</div>
+
+        <!-- Player -->
+        <div class="fighter" id="playerFighter">
+          <div class="speech-bubble" id="playerBubble">대사 대기 중...</div>
+          <div class="avatar" id="playerAvatar">👤</div>
+          <div class="name">YOU</div>
+          <div class="heart-gauge-container" id="playerHearts">
+            <span class="heart-icon">❤️</span>
+            <span class="heart-icon">❤️</span>
+            <span class="heart-icon">❤️</span>
+            <span class="heart-icon">❤️</span>
+            <span class="heart-icon">❤️</span>
+            <span class="heart-icon">❤️</span>
+            <span class="heart-icon">❤️</span>
+          </div>
+        </div>
+
+        <!-- CPU (차경원) -->
+        <div class="fighter" id="cpuFighter">
+          <div class="speech-bubble" id="cpuBubble">상대 대기 중...</div>
+          <div class="avatar" id="cpuAvatar">🥀</div>
+          <div class="name">차경원</div>
+          <div class="heart-gauge-container" id="cpuHearts">
+            <span class="heart-icon">❤️</span>
+            <span class="heart-icon">❤️</span>
+            <span class="heart-icon">❤️</span>
+            <span class="heart-icon">❤️</span>
+            <span class="heart-icon">❤️</span>
+            <span class="heart-icon">❤️</span>
+            <span class="heart-icon">❤️</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controls & Chat -->
+      <div class="controls">
+        <button class="btn-attack" id="attackBtn" onclick="playTurn()">공격하기</button>
+        
+        <div class="chat-box-wrapper">
+          <div class="chat-header">
+            <span>CONSOLE LOG</span>
+            <span>SECURE CHANNEL</span>
+          </div>
+          <div class="log-box" id="logBox"></div>
+        </div>
+      </div>
+
+      <!-- Overlays -->
+      <div class="overlay" id="overlay">
+        <div class="overlay-title" id="overlayTitle">GAME OVER</div>
+        <button class="btn-restart" onclick="resetGame()">AGAIN</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- YouTube Iframe API Script -->
+  <script src="https://www.youtube.com/iframe_api"></script>
+
+  <script>
+    const playerLines = [
+      "제발 좀 건실하게 살 수 없어?",
+      "매번 망나니 같이 구니까 쪽팔려, 왜? 내가 이상해?",
+      "난 우리 가족들한테 너 소개도 못해.",
+      "너희 아버지 회사 들어가는 거, 그게 그렇게 어렵니?",
+      "나 사랑하긴 해? 자존심이야 사랑이야?",
+      "너 같은 새끼랑 만나는 내가 미친거지.",
+      "됐다, 그만하자."
+    ];
+
+    const cpuLines = [
+      "건실? 여기서 어떻게 더 건실해.",
+      "망나니? 쪽팔려? 아~ 쪽팔린 새끼랑 만나주느라 고생이 많다?",
+      "그럼 집에 가서 효도해. 고상하신 부모님 말 듣고 망나니 새끼 잊어.",
+      "차라리 나한테 죽으라고 해. 그 인간 내 아버지 아니야.",
+      "사랑하니까 이 지랄이지 매번.",
+      "너랑은 말이 안 통한다, 또 우냐?",
+      "또 내가 개새끼지? 개새끼가 꺼져드릴게."
+    ];
+
+    let currentTurn = 0;
+    let playerHitCount = 0; 
+    let playerHeartsLeft = 7;
+    let cpuHeartsLeft = 7;
+    let isBusy = false;
+    let bgmPlaying = true;
+
+    // --- 유튜브 API 공식 연동 (00:27 시작 설정) ---
+    let player;
+    const videoId = '6e4jMf_PmrM'; 
+    const startSeconds = 27; // 00:27 지점
+
+    function onYouTubeIframeAPIReady() {
+      player = new YT.Player('youtubePlayer', {
+        height: '1',
+        width: '1',
+        videoId: videoId,
+        playerVars: {
+          'autoplay': 0,
+          'loop': 1,
+          'playlist': videoId,
+          'start': startSeconds // 시작 지점 (초 단위)
+        },
+        events: {
+          'onReady': (e) => {
+            // 플레이어 준비 완료 시 시작 위치 세팅
+            e.target.seekTo(startSeconds, true);
+          }
+        }
+      });
+    }
+
+    function toggleBgm() {
+      const btn = document.getElementById('bgmToggleBtn');
+      if (!player || typeof player.playVideo !== 'function') return;
+
+      if (bgmPlaying) {
+        player.pauseVideo();
+        btn.innerText = '🔇 BGM OFF';
+        bgmPlaying = false;
+      } else {
+        player.playVideo();
+        btn.innerText = '🎵 BGM ON';
+        bgmPlaying = true;
+      }
+    }
+
+    let audioCtx;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function startGame() {
+      initAudio();
+      if (player && typeof player.playVideo === 'function') {
+        player.seekTo(startSeconds, true); // 시작할 때 확실하게 27초로 이동
+        player.playVideo();
+      }
+      document.getElementById('introScreen').classList.add('hide');
+      addLog('배틀 세션이 연결되었습니다.', 'system');
+      addLog('BGM: 유튜브 오디오 (00:27 재생 중)', 'system');
+    }
+
+    function returnToIntro() {
+      resetGame();
+      if (player && typeof player.pauseVideo === 'function') {
+        player.pauseVideo();
+        player.seekTo(startSeconds, true); // 인트로로 돌아갈 때도 27초로 리셋
+      }
+      bgmPlaying = false;
+      document.getElementById('bgmToggleBtn').innerText = '🔇 BGM OFF';
+      document.getElementById('introScreen').classList.remove('hide');
+    }
+
+    function playSound(type) {
+      if (!audioCtx) initAudio();
+      const now = audioCtx.currentTime;
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      if (type === 'punch') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(25, now + 0.2);
+        gain.gain.setValueAtTime(0.5, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+      } else if (type === 'flower') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(500, now);
+        osc.frequency.linearRampToValueAtTime(120, now + 0.25);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+      } else if (type === 'lose') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(180, now);
+        osc.frequency.linearRampToValueAtTime(40, now + 0.8);
+        gain.gain.setValueAtTime(0.4, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+      }
+      osc.start(now);
+      osc.stop(now + 0.8);
+    }
+
+    function showDamage(targetElement, text) {
+      const pop = document.createElement('div');
+      pop.className = 'damage-pop';
+      pop.innerText = text;
+      targetElement.appendChild(pop);
+      setTimeout(() => pop.remove(), 700);
+    }
+
+    function getCurrentTimeString() {
+      const d = new Date();
+      return `[${String(d.getMinutes()).padStart(2, '0')}:${String(d.getSeconds()).padStart(2, '0')}]`;
+    }
+
+    function addLog(text, type, tagText = '') {
+      const logBox = document.getElementById('logBox');
+      const entry = document.createElement('div');
+      entry.className = `log-entry ${type}`;
+      entry.innerHTML = `<span class="log-time">${getCurrentTimeString()}</span>${tagText ? `<span class="log-tag">${tagText}</span>` : ''}<span>${text}</span>`;
+      logBox.appendChild(entry);
+      logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    function showBubble(elementId, text) {
+      const bubble = document.getElementById(elementId);
+      bubble.innerText = text;
+      bubble.classList.add('show');
+      setTimeout(() => bubble.classList.remove('show'), 2200);
+    }
+
+    function triggerWeaponAnim(weaponId, animClass) {
+      const weapon = document.getElementById(weaponId);
+      weapon.classList.remove(animClass);
+      void weapon.offsetWidth;
+      weapon.classList.add(animClass);
+      setTimeout(() => weapon.classList.remove(animClass), 400);
+    }
+
+    function updateHearts(who, heartsLeft) {
+      const container = document.getElementById(`${who}Hearts`);
+      const hearts = container.children;
+      const blackCount = 7 - heartsLeft;
+      for (let i = 0; i < hearts.length; i++) {
+        if (i >= (7 - blackCount)) {
+          hearts[i].classList.add('blacked');
+          hearts[i].innerText = '🖤';
+        } else {
+          hearts[i].classList.remove('blacked');
+          hearts[i].innerText = '❤️';
+        }
+      }
+    }
+
+    function playTurn() {
+      if (isBusy || currentTurn >= playerLines.length) return;
+      isBusy = true;
+
+      const attackBtn = document.getElementById('attackBtn');
+      attackBtn.disabled = true;
+
+      const pLine = playerLines[currentTurn];
+      const cLine = cpuLines[currentTurn];
+
+      showBubble('playerBubble', pLine);
+      triggerWeaponAnim('punchWeapon', 'punch-anim');
+      
+      setTimeout(() => {
+        playSound('punch');
+        
+        cpuHeartsLeft = Math.max(0, cpuHeartsLeft - 1);
+        updateHearts('cpu', cpuHeartsLeft);
+        showDamage(document.getElementById('cpuFighter'), '💔 상처');
+        
+        const cpuFighter = document.getElementById('cpuFighter');
+        cpuFighter.classList.add('shake');
+        setTimeout(() => cpuFighter.classList.remove('shake'), 300);
+
+        addLog(`"${pLine}"`, 'player', 'YOU: ');
+
+        setTimeout(() => {
+          showBubble('cpuBubble', cLine);
+          triggerWeaponAnim('flowerWeapon', 'flower-anim');
+
+          setTimeout(() => {
+            playSound('flower');
+
+            playerHitCount++;
+            if (playerHitCount % 2 === 0 && playerHeartsLeft > 1) {
+              playerHeartsLeft--;
+              updateHearts('player', playerHeartsLeft);
+            }
+            showDamage(document.getElementById('playerFighter'), '🖤 균열');
+
+            const playerFighter = document.getElementById('playerFighter');
+            playerFighter.classList.add('shake');
+            setTimeout(() => playerFighter.classList.remove('shake'), 300);
+
+            addLog(`"${cLine}"`, 'cpu', '차경원: ');
+
+            currentTurn++;
+
+            if (currentTurn >= playerLines.length) {
+              setTimeout(() => handleGameOver(), 1000);
+            } else {
+              isBusy = false;
+              attackBtn.disabled = false;
+              attackBtn.innerText = '공격하기';
+            }
+          }, 200);
+        }, 2000);
+      }, 200);
+    }
+
+    function handleGameOver() {
+      const overlay = document.getElementById('overlay');
+      const overlayTitle = document.getElementById('overlayTitle');
+
+      cpuHeartsLeft = 0;
+      updateHearts('cpu', 0);
+
+      playSound('lose');
+      overlayTitle.innerText = 'GAME OVER';
+      
+      addLog('서로에게 던진 모진 말에 심장이 모두 까맣게 타버렸다.', 'system');
+      overlay.classList.add('show');
+    }
+
+    function resetGame() {
+      currentTurn = 0;
+      playerHitCount = 0;
+      playerHeartsLeft = 7;
+      cpuHeartsLeft = 7;
+      isBusy = false;
+      updateHearts('player', 7);
+      updateHearts('cpu', 7);
+      document.getElementById('attackBtn').disabled = false;
+      document.getElementById('attackBtn').innerText = '공격하기';
+      document.getElementById('overlay').classList.remove('show');
+      document.getElementById('logBox').innerHTML = '';
+      addLog('새로운 세션이 연결되었습니다.', 'system');
+    }
+  </script>
+</body>
+</html>
+
+
+1. love war 제 289983회 개최 이거 두개가 제목인데 배치 좀 조정
+2. X (가위표) 오른쪽 비지엠보다 오른쪽에 잇게
+3. [여기 안에 실제 사용자 시간 뜨게] (시랑 분만 잇음 돼 참고로 24표기임 오후 7시면 19:00)
+4. 배틀 세션이 연결되었습니다 -> BGM: Love War, YENA (Feat. BE‘O) 순서로 
+5. 균열이랑 상처 뜨는 거 좀만 작게, 폰트도 조금 더 단정 반듯하게 (이모지 바로 머리? 위에 뜨게)
+6. 위에 링크 love. justdidn'twannafightwithyou.com 이렇게? 뭔가 예쁜 링크를 대충 / 랑 . 섞어서 
