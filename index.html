@@ -1109,13 +1109,20 @@
       }
     }
 
-    // 새로고침 후에도 사용자가 페이지를 클릭하면 BGM 재생을 다시 시도
-    document.addEventListener('click', () => {
+    // 새로고침 후 첫 터치/클릭 즉시 BGM 재생 시도
+    function startBgmFromInteraction() {
       hasInteracted = true;
-      if (bgmPlaying) {
-        tryPlayVideo();
+      if (!bgmPlaying) return;
+
+      if (youtubeReady && player && typeof player.playVideo === 'function') {
+        player.playVideo();
       }
-    });
+    }
+
+    // pointerdown은 모바일 터치와 마우스 입력을 모두 사용자 동작으로 즉시 감지
+    document.addEventListener('pointerdown', startBgmFromInteraction, true);
+    document.addEventListener('touchstart', startBgmFromInteraction, { capture: true, passive: true });
+    document.addEventListener('keydown', startBgmFromInteraction, true);
 
     function toggleBgm() {
       const btn = document.getElementById('bgmToggleBtn');
