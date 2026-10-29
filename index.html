@@ -1116,6 +1116,8 @@
       if (!bgmPlaying) return;
 
       if (youtubeReady && player && typeof player.playVideo === 'function') {
+        player.unMute();
+        player.setVolume(80);
         player.playVideo();
       }
     }
