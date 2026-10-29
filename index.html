@@ -1067,7 +1067,7 @@
             youtubeReady = true;
             e.target.seekTo(startSeconds, true);
             e.target.setVolume(80);
-            if (bgmPlaying) {
+            if (hasInteracted && bgmPlaying) {
               tryPlayVideo();
             }
           },
@@ -1089,13 +1089,13 @@
       }
     }
 
-    // 페이지 내 아무 곳이나 처음 클릭했을 때 BGM 강제 재생 (브라우저 정책 해제)
+    // 새로고침 후에도 사용자가 페이지를 클릭하면 BGM 재생을 다시 시도
     document.addEventListener('click', () => {
-      if (!hasInteracted && bgmPlaying) {
-        hasInteracted = true;
+      hasInteracted = true;
+      if (bgmPlaying) {
         tryPlayVideo();
       }
-    }, { once: true });
+    });
 
     function toggleBgm() {
       const btn = document.getElementById('bgmToggleBtn');
