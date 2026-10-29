@@ -732,11 +732,69 @@
     let cpuHeartsLeft = 7;
     let isBusy = false;
     let bgmPlaying = true;
+    let hasInteracted = false; // 첫 클릭 여부 체크
 
-    // --- 유튜브 API 공식 연동 (00:27 시작 설정) ---
+    // --- Web Audio API 기반 타격음 생성기 ---
+    let audioCtx = null;
+
+    function initAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playPunchSound() {
+      try {
+        initAudioContext();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(140, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.15);
+
+        gain.gain.setValueAtTime(0.7, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+      } catch (e) {
+        console.warn('Audio error:', e);
+      }
+    }
+
+    function playFlowerSound() {
+      try {
+        initAudioContext();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(80, audioCtx.currentTime + 0.2);
+
+        gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.2);
+      } catch (e) {
+        console.warn('Audio error:', e);
+      }
+    }
+
+    // --- 유튜브 API 공식 연동 (00:27 시작 및 광고 최소화/방어 설정) ---
     let player;
     let youtubeReady = false;
-    let gameStarted = false;
     const videoId = '6e4jMf_PmrM'; 
     const startSeconds = 27; // 00:27 지점
 
@@ -750,16 +808,19 @@
           'playsinline': 1,
           'loop': 1,
           'playlist': videoId,
-          'start': startSeconds // 시작 지점 (초 단위)
+          'start': startSeconds,
+          'controls': 0,        // 플레이어 컨트롤 숨김
+          'disablekb': 1,       // 키보드 컨트롤 비활성화
+          'modestbranding': 1,  // 유튜브 로고 최소화
+          'iv_load_policy': 3   // 동영상 주석 숨김
         },
         events: {
           'onReady': (e) => {
             youtubeReady = true;
             e.target.seekTo(startSeconds, true);
-            if (bgmPlaying && userInteracted) {
-              e.target.unMute();
-              e.target.setVolume(100);
-              e.target.playVideo();
+            e.target.setVolume(80);
+            if (bgmPlaying) {
+              tryPlayVideo();
             }
           },
           'onStateChange': (e) => {
@@ -773,20 +834,20 @@
       });
     }
 
-    let userInteracted = false;
-
-    // 새로고침 후 페이지에서 처음 클릭/탭하면 BGM 재생을 다시 시도
-    document.addEventListener('click', () => {
-      userInteracted = true;
-      if (bgmPlaying && youtubeReady && player && typeof player.playVideo === 'function') {
-        player.unMute();
-        player.setVolume(100);
-        if (player.getPlayerState() !== YT.PlayerState.PLAYING) {
-          player.seekTo(startSeconds, true);
-          player.playVideo();
-        }
+    // 브라우저 정책을 우회하여 안전하게 재생 시도
+    function tryPlayVideo() {
+      if (youtubeReady && player && typeof player.playVideo === 'function' && bgmPlaying) {
+        player.playVideo();
       }
-    });
+    }
+
+    // 페이지 내 아무 곳이나 처음 클릭했을 때 BGM 강제 재생 (브라우저 정책 해제)
+    document.addEventListener('click', () => {
+      if (!hasInteracted && bgmPlaying) {
+        hasInteracted = true;
+        tryPlayVideo();
+      }
+    }, { once: true });
 
     function toggleBgm() {
       const btn = document.getElementById('bgmToggleBtn');
@@ -799,15 +860,17 @@
         bgmPlaying = true;
         btn.innerText = '🎵 BGM ON';
         if (youtubeReady && player && typeof player.playVideo === 'function') {
+          player.seekTo(startSeconds, true);
           player.playVideo();
         }
       }
     }
 
     function startGame() {
-      gameStarted = true;
+      initAudioContext();
+      hasInteracted = true;
       if (bgmPlaying && youtubeReady && player && typeof player.playVideo === 'function') {
-        player.seekTo(startSeconds, true); // 시작할 때 확실하게 27초로 이동
+        player.seekTo(startSeconds, true);
         player.playVideo();
       }
       document.getElementById('introScreen').classList.add('hide');
@@ -817,10 +880,9 @@
 
     function returnToIntro() {
       resetGame();
-      gameStarted = false;
       if (player && typeof player.pauseVideo === 'function') {
         player.pauseVideo();
-        player.seekTo(startSeconds, true); // 인트로로 돌아갈 때도 27초로 리셋
+        player.seekTo(startSeconds, true);
       }
       bgmPlaying = false;
       document.getElementById('bgmToggleBtn').innerText = '🔇 BGM OFF';
@@ -893,6 +955,8 @@
       addLog(`"${pLine}"`, 'player', 'YOU: ');
       triggerWeaponAnim('punchWeapon', 'punch-anim');
       
+      playPunchSound();
+      
       setTimeout(() => {
         
         cpuHeartsLeft = Math.max(0, cpuHeartsLeft - 1);
@@ -909,9 +973,9 @@
 
           const isFinalLine = currentTurn === cpuLines.length - 1;
 
-          // 꽃을 던지는 순간 YOU가 즉시 타격받음. 마지막 대사에서는 공격 생략.
           if (!isFinalLine) {
             triggerWeaponAnim('flowerWeapon', 'flower-anim');
+            playFlowerSound();
     
             playerHitCount++;
             if (playerHitCount % 2 === 0 && playerHeartsLeft > 1) {
@@ -925,7 +989,6 @@
             setTimeout(() => playerFighter.classList.remove('shake'), 300);
           }
 
-          // 경원의 대사가 끝날 때까지 공격 버튼 비활성화
           setTimeout(() => {
             currentTurn++;
 
@@ -971,5 +1034,3 @@
   </script>
 </body>
 </html>
-
-
