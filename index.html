@@ -35,9 +35,11 @@
 
     /* Hidden YouTube Player */
     #ytPlayerContainer {
-      position: absolute;
-      width: 1px;
-      height: 1px;
+      position: fixed;
+      width: 200px;
+      height: 200px;
+      left: -220px;
+      bottom: 0;
       opacity: 0;
       pointer-events: none;
       overflow: hidden;
@@ -591,7 +593,7 @@
 
   <!-- YouTube Iframe API Container -->
   <div id="ytPlayerContainer">
-    <div id="youtubePlayer"></div>
+    <div id="youtubePlayer" style="width:200px;height:200px"></div>
   </div>
 
   <div class="browser-frame" id="gameWindow">
@@ -748,19 +750,18 @@
         events: {
           'onReady': (e) => {
             youtubeReady = true;
+            e.target.mute();
             e.target.seekTo(startSeconds, true);
-            // 게임 시작을 먼저 눌렀다면 플레이어 준비 직후 음악 재생
-            if (gameStarted && bgmPlaying) {
-              e.target.playVideo();
-            }
+            e.target.unMute();
+            if (gameStarted && bgmPlaying) e.target.playVideo();
           },
           'onStateChange': (e) => {
-            // 사용자가 BGM을 켜 둔 상태에서 재생이 멈추면 버튼 상태를 맞춤
             if (e.data === YT.PlayerState.ENDED && bgmPlaying) {
               e.target.seekTo(startSeconds, true);
               e.target.playVideo();
             }
-          }
+          },
+          'onError': (e) => console.warn('YouTube BGM playback error:', e.data)
         }
       });
     }
@@ -931,28 +932,25 @@
 
           const isFinalLine = currentTurn === cpuLines.length - 1;
 
-          // 마지막 대사인 "개새끼가 꺼져드릴게."에서는 꽃 공격을 하지 않음
+          // 꽃을 던지는 순간 YOU가 즉시 타격받음. 마지막 대사에서는 공격 생략.
           if (!isFinalLine) {
             triggerWeaponAnim('flowerWeapon', 'flower-anim');
+            playSound('flower');
+
+            playerHitCount++;
+            if (playerHitCount % 2 === 0 && playerHeartsLeft > 1) {
+              playerHeartsLeft--;
+              updateHearts('player', playerHeartsLeft);
+            }
+            showDamage(document.getElementById('playerFighter'), '🖤 균열');
+
+            const playerFighter = document.getElementById('playerFighter');
+            playerFighter.classList.add('shake');
+            setTimeout(() => playerFighter.classList.remove('shake'), 300);
           }
 
-          // 경원의 대사가 표시되는 동안 공격 버튼을 계속 비활성화
+          // 경원의 대사가 끝날 때까지 공격 버튼 비활성화
           setTimeout(() => {
-            if (!isFinalLine) {
-              playSound('flower');
-
-              playerHitCount++;
-              if (playerHitCount % 2 === 0 && playerHeartsLeft > 1) {
-                playerHeartsLeft--;
-                updateHearts('player', playerHeartsLeft);
-              }
-              showDamage(document.getElementById('playerFighter'), '🖤 균열');
-
-              const playerFighter = document.getElementById('playerFighter');
-              playerFighter.classList.add('shake');
-              setTimeout(() => playerFighter.classList.remove('shake'), 300);
-            }
-
             addLog(`"${cLine}"`, 'cpu', '차경원: ');
             currentTurn++;
 
