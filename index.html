@@ -756,7 +756,11 @@
           'onReady': (e) => {
             youtubeReady = true;
             e.target.seekTo(startSeconds, true);
-            if (bgmPlaying) e.target.playVideo();
+            if (bgmPlaying && userInteracted) {
+              e.target.unMute();
+              e.target.setVolume(100);
+              e.target.playVideo();
+            }
           },
           'onStateChange': (e) => {
             if (e.data === YT.PlayerState.ENDED && bgmPlaying) {
@@ -768,6 +772,21 @@
         }
       });
     }
+
+    let userInteracted = false;
+
+    // 새로고침 후 페이지에서 처음 클릭/탭하면 BGM 재생을 다시 시도
+    document.addEventListener('click', () => {
+      userInteracted = true;
+      if (bgmPlaying && youtubeReady && player && typeof player.playVideo === 'function') {
+        player.unMute();
+        player.setVolume(100);
+        if (player.getPlayerState() !== YT.PlayerState.PLAYING) {
+          player.seekTo(startSeconds, true);
+          player.playVideo();
+        }
+      }
+    });
 
     function toggleBgm() {
       const btn = document.getElementById('bgmToggleBtn');
