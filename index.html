@@ -645,7 +645,7 @@
         <div class="fighter" id="playerFighter">
           <div class="speech-bubble" id="playerBubble">대사 대기 중...</div>
           <div class="avatar" id="playerAvatar" aria-label="YOU 사진">
-            <img src="images/you.jpg" alt="YOU" onload="this.nextElementSibling.style.display='none'" onerror="this.style.display='none'">
+            <img src="YY.png" alt="YOU" onload="this.nextElementSibling.style.display='none'" onerror="this.style.display='none'">
             <span class="avatar-placeholder">YOU<small>PHOTO</small></span>
           </div>
           <div class="name">YOU</div>
@@ -664,7 +664,7 @@
         <div class="fighter" id="cpuFighter">
           <div class="speech-bubble" id="cpuBubble">상대 대기 중...</div>
           <div class="avatar" id="cpuAvatar" aria-label="차경원 사진">
-            <img src="images/cha-kyungwon.jpg" alt="차경원" onload="this.nextElementSibling.style.display='none'" onerror="this.style.display='none'">
+            <img src="CC.png" alt="차경원" onload="this.nextElementSibling.style.display='none'" onerror="this.style.display='none'">
             <span class="avatar-placeholder">차경원<small>PHOTO</small></span>
           </div>
           <div class="name">차경원</div>
@@ -746,7 +746,7 @@
         width: '200',
         videoId: videoId,
         playerVars: {
-          'autoplay': 0,
+          'autoplay': 1,
           'playsinline': 1,
           'loop': 1,
           'playlist': videoId,
@@ -756,7 +756,7 @@
           'onReady': (e) => {
             youtubeReady = true;
             e.target.seekTo(startSeconds, true);
-            if (gameStarted && bgmPlaying) e.target.playVideo();
+            if (bgmPlaying) e.target.playVideo();
           },
           'onStateChange': (e) => {
             if (e.data === YT.PlayerState.ENDED && bgmPlaying) {
@@ -785,21 +785,9 @@
       }
     }
 
-    let audioCtx;
-
-    function initAudio() {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-    }
-
     function startGame() {
-      initAudio();
       gameStarted = true;
-      if (youtubeReady && player && typeof player.playVideo === 'function') {
+      if (bgmPlaying && youtubeReady && player && typeof player.playVideo === 'function') {
         player.seekTo(startSeconds, true); // 시작할 때 확실하게 27초로 이동
         player.playVideo();
       }
@@ -818,38 +806,6 @@
       bgmPlaying = false;
       document.getElementById('bgmToggleBtn').innerText = '🔇 BGM OFF';
       document.getElementById('introScreen').classList.remove('hide');
-    }
-
-    function playSound(type) {
-      if (!audioCtx) initAudio();
-      const now = audioCtx.currentTime;
-
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-
-      if (type === 'punch') {
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(150, now);
-        osc.frequency.exponentialRampToValueAtTime(25, now + 0.2);
-        gain.gain.setValueAtTime(0.5, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
-      } else if (type === 'flower') {
-        osc.type = 'sine';
-        osc.frequency.setValueAtTime(500, now);
-        osc.frequency.linearRampToValueAtTime(120, now + 0.25);
-        gain.gain.setValueAtTime(0.3, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
-      } else if (type === 'lose') {
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(180, now);
-        osc.frequency.linearRampToValueAtTime(40, now + 0.8);
-        gain.gain.setValueAtTime(0.4, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
-      }
-      osc.start(now);
-      osc.stop(now + 0.8);
     }
 
     function showDamage(targetElement, text) {
@@ -919,7 +875,6 @@
       triggerWeaponAnim('punchWeapon', 'punch-anim');
       
       setTimeout(() => {
-        playSound('punch');
         
         cpuHeartsLeft = Math.max(0, cpuHeartsLeft - 1);
         updateHearts('cpu', cpuHeartsLeft);
@@ -938,8 +893,7 @@
           // 꽃을 던지는 순간 YOU가 즉시 타격받음. 마지막 대사에서는 공격 생략.
           if (!isFinalLine) {
             triggerWeaponAnim('flowerWeapon', 'flower-anim');
-            playSound('punch');
-
+    
             playerHitCount++;
             if (playerHitCount % 2 === 0 && playerHeartsLeft > 1) {
               playerHeartsLeft--;
@@ -975,7 +929,6 @@
       cpuHeartsLeft = 0;
       updateHearts('cpu', 0);
 
-      playSound('lose');
       overlayTitle.innerText = 'GAME OVER';
       
       addLog('서로에게 던진 모진 말에 심장이 모두 까맣게 타버렸다.', 'system');
