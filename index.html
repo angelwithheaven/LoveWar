@@ -738,11 +738,12 @@
 
     function onYouTubeIframeAPIReady() {
       player = new YT.Player('youtubePlayer', {
-        height: '1',
-        width: '1',
+        height: '200',
+        width: '200',
         videoId: videoId,
         playerVars: {
           'autoplay': 0,
+          'playsinline': 1,
           'loop': 1,
           'playlist': videoId,
           'start': startSeconds // 시작 지점 (초 단위)
@@ -750,9 +751,7 @@
         events: {
           'onReady': (e) => {
             youtubeReady = true;
-            e.target.mute();
             e.target.seekTo(startSeconds, true);
-            e.target.unMute();
             if (gameStarted && bgmPlaying) e.target.playVideo();
           },
           'onStateChange': (e) => {
