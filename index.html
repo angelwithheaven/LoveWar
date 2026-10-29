@@ -292,9 +292,57 @@
     }
 
     .avatar {
-      font-size: 4.2rem;
-      margin-bottom: 8px;
-      filter: grayscale(30%) drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+      width: 110px;
+      aspect-ratio: 1 / 1;
+      margin-bottom: 10px;
+      border: 1px solid #383838;
+      border-radius: 8px;
+      background: #191919;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #777;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .avatar:hover {
+      border-color: #777;
+      background: #202020;
+    }
+
+    .avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .avatar-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 7px;
+      font-size: 1.8rem;
+      line-height: 1;
+    }
+
+    .avatar-placeholder small {
+      font-family: monospace;
+      font-size: 0.58rem;
+      letter-spacing: 1px;
+      color: #777;
+    }
+
+    .avatar input[type="file"] {
+      display: none;
+    }
+
+    @media (max-width: 480px) {
+      .avatar { width: 92px; }
     }
 
     /* Weapons Animation */
@@ -595,7 +643,10 @@
         <!-- Player -->
         <div class="fighter" id="playerFighter">
           <div class="speech-bubble" id="playerBubble">대사 대기 중...</div>
-          <div class="avatar" id="playerAvatar">👤</div>
+          <label class="avatar" id="playerAvatar" title="클릭해서 YOU 사진 넣기">
+            <input type="file" accept="image/*" onchange="loadAvatar(event, 'playerAvatar')">
+            <span class="avatar-placeholder">＋<small>ADD PHOTO</small></span>
+          </label>
           <div class="name">YOU</div>
           <div class="heart-gauge-container" id="playerHearts">
             <span class="heart-icon">❤️</span>
@@ -611,7 +662,10 @@
         <!-- CPU (차경원) -->
         <div class="fighter" id="cpuFighter">
           <div class="speech-bubble" id="cpuBubble">상대 대기 중...</div>
-          <div class="avatar" id="cpuAvatar">🥀</div>
+          <label class="avatar" id="cpuAvatar" title="클릭해서 차경원 사진 넣기">
+            <input type="file" accept="image/*" onchange="loadAvatar(event, 'cpuAvatar')">
+            <span class="avatar-placeholder">＋<small>ADD PHOTO</small></span>
+          </label>
           <div class="name">차경원</div>
           <div class="heart-gauge-container" id="cpuHearts">
             <span class="heart-icon">❤️</span>
@@ -727,6 +781,24 @@
       if (audioCtx.state === 'suspended') {
         audioCtx.resume();
       }
+    }
+
+    function loadAvatar(event, avatarId) {
+      const file = event.target.files && event.target.files[0];
+      if (!file || !file.type.startsWith('image/')) return;
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const avatar = document.getElementById(avatarId);
+        let img = avatar.querySelector('img');
+        if (!img) {
+          img = document.createElement('img');
+          avatar.querySelector('.avatar-placeholder')?.remove();
+          avatar.insertBefore(img, avatar.querySelector('input'));
+        }
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
     }
 
     function startGame() {
