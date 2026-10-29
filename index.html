@@ -335,9 +335,6 @@
       color: #777;
     }
 
-    .avatar img:not([src=""]) + .avatar-placeholder {
-      display: none;
-    }
 
     @media (max-width: 480px) {
       .avatar { width: 92px; }
@@ -642,7 +639,7 @@
         <div class="fighter" id="playerFighter">
           <div class="speech-bubble" id="playerBubble">대사 대기 중...</div>
           <div class="avatar" id="playerAvatar" aria-label="YOU 사진">
-            <img src="images/you.jpg" alt="YOU" onerror="this.style.display='none'">
+            <img src="images/you.jpg" alt="YOU" onload="this.nextElementSibling.style.display='none'" onerror="this.style.display='none'">
             <span class="avatar-placeholder">YOU<small>PHOTO</small></span>
           </div>
           <div class="name">YOU</div>
@@ -661,7 +658,7 @@
         <div class="fighter" id="cpuFighter">
           <div class="speech-bubble" id="cpuBubble">상대 대기 중...</div>
           <div class="avatar" id="cpuAvatar" aria-label="차경원 사진">
-            <img src="images/cha-kyungwon.jpg" alt="차경원" onerror="this.style.display='none'">
+            <img src="images/cha-kyungwon.jpg" alt="차경원" onload="this.nextElementSibling.style.display='none'" onerror="this.style.display='none'">
             <span class="avatar-placeholder">차경원<small>PHOTO</small></span>
           </div>
           <div class="name">차경원</div>
