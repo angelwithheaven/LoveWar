@@ -305,20 +305,17 @@
       justify-content: center;
       color: #777;
       box-shadow: 0 4px 12px rgba(0,0,0,0.35);
-      cursor: pointer;
       transition: border-color 0.2s, background 0.2s;
     }
 
-    .avatar:hover {
-      border-color: #777;
-      background: #202020;
-    }
-
     .avatar img {
+      position: absolute;
+      inset: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
       display: block;
+      z-index: 1;
     }
 
     .avatar-placeholder {
@@ -326,8 +323,9 @@
       flex-direction: column;
       align-items: center;
       gap: 7px;
-      font-size: 1.8rem;
+      font-size: 1.05rem;
       line-height: 1;
+      text-align: center;
     }
 
     .avatar-placeholder small {
@@ -337,7 +335,7 @@
       color: #777;
     }
 
-    .avatar input[type="file"] {
+    .avatar img:not([src=""]) + .avatar-placeholder {
       display: none;
     }
 
@@ -643,10 +641,10 @@
         <!-- Player -->
         <div class="fighter" id="playerFighter">
           <div class="speech-bubble" id="playerBubble">대사 대기 중...</div>
-          <label class="avatar" id="playerAvatar" title="클릭해서 YOU 사진 넣기">
-            <input type="file" accept="image/*" onchange="loadAvatar(event, 'playerAvatar')">
-            <span class="avatar-placeholder">＋<small>ADD PHOTO</small></span>
-          </label>
+          <div class="avatar" id="playerAvatar" aria-label="YOU 사진">
+            <img src="images/you.jpg" alt="YOU" onerror="this.style.display='none'">
+            <span class="avatar-placeholder">YOU<small>PHOTO</small></span>
+          </div>
           <div class="name">YOU</div>
           <div class="heart-gauge-container" id="playerHearts">
             <span class="heart-icon">❤️</span>
@@ -662,10 +660,10 @@
         <!-- CPU (차경원) -->
         <div class="fighter" id="cpuFighter">
           <div class="speech-bubble" id="cpuBubble">상대 대기 중...</div>
-          <label class="avatar" id="cpuAvatar" title="클릭해서 차경원 사진 넣기">
-            <input type="file" accept="image/*" onchange="loadAvatar(event, 'cpuAvatar')">
-            <span class="avatar-placeholder">＋<small>ADD PHOTO</small></span>
-          </label>
+          <div class="avatar" id="cpuAvatar" aria-label="차경원 사진">
+            <img src="images/cha-kyungwon.jpg" alt="차경원" onerror="this.style.display='none'">
+            <span class="avatar-placeholder">차경원<small>PHOTO</small></span>
+          </div>
           <div class="name">차경원</div>
           <div class="heart-gauge-container" id="cpuHearts">
             <span class="heart-icon">❤️</span>
@@ -734,6 +732,8 @@
 
     // --- 유튜브 API 공식 연동 (00:27 시작 설정) ---
     let player;
+    let youtubeReady = false;
+    let gameStarted = false;
     const videoId = '6e4jMf_PmrM'; 
     const startSeconds = 27; // 00:27 지점
 
@@ -750,8 +750,19 @@
         },
         events: {
           'onReady': (e) => {
-            // 플레이어 준비 완료 시 시작 위치 세팅
+            youtubeReady = true;
             e.target.seekTo(startSeconds, true);
+            // 게임 시작을 먼저 눌렀다면 플레이어 준비 직후 음악 재생
+            if (gameStarted && bgmPlaying) {
+              e.target.playVideo();
+            }
+          },
+          'onStateChange': (e) => {
+            // 사용자가 BGM을 켜 둔 상태에서 재생이 멈추면 버튼 상태를 맞춤
+            if (e.data === YT.PlayerState.ENDED && bgmPlaying) {
+              e.target.seekTo(startSeconds, true);
+              e.target.playVideo();
+            }
           }
         }
       });
@@ -759,16 +770,17 @@
 
     function toggleBgm() {
       const btn = document.getElementById('bgmToggleBtn');
-      if (!player || typeof player.playVideo !== 'function') return;
 
       if (bgmPlaying) {
-        player.pauseVideo();
-        btn.innerText = '🔇 BGM OFF';
+        if (player && typeof player.pauseVideo === 'function') player.pauseVideo();
         bgmPlaying = false;
+        btn.innerText = '🔇 BGM OFF';
       } else {
-        player.playVideo();
-        btn.innerText = '🎵 BGM ON';
         bgmPlaying = true;
+        btn.innerText = '🎵 BGM ON';
+        if (youtubeReady && player && typeof player.playVideo === 'function') {
+          player.playVideo();
+        }
       }
     }
 
@@ -783,27 +795,10 @@
       }
     }
 
-    function loadAvatar(event, avatarId) {
-      const file = event.target.files && event.target.files[0];
-      if (!file || !file.type.startsWith('image/')) return;
-
-      const reader = new FileReader();
-      reader.onload = () => {
-        const avatar = document.getElementById(avatarId);
-        let img = avatar.querySelector('img');
-        if (!img) {
-          img = document.createElement('img');
-          avatar.querySelector('.avatar-placeholder')?.remove();
-          avatar.insertBefore(img, avatar.querySelector('input'));
-        }
-        img.src = reader.result;
-      };
-      reader.readAsDataURL(file);
-    }
-
     function startGame() {
       initAudio();
-      if (player && typeof player.playVideo === 'function') {
+      gameStarted = true;
+      if (youtubeReady && player && typeof player.playVideo === 'function') {
         player.seekTo(startSeconds, true); // 시작할 때 확실하게 27초로 이동
         player.playVideo();
       }
@@ -814,6 +809,7 @@
 
     function returnToIntro() {
       resetGame();
+      gameStarted = false;
       if (player && typeof player.pauseVideo === 'function') {
         player.pauseVideo();
         player.seekTo(startSeconds, true); // 인트로로 돌아갈 때도 27초로 리셋
