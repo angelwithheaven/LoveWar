@@ -915,6 +915,7 @@
       const cLine = cpuLines[currentTurn];
 
       showBubble('playerBubble', pLine);
+      addLog(`"${pLine}"`, 'player', 'YOU: ');
       triggerWeaponAnim('punchWeapon', 'punch-anim');
       
       setTimeout(() => {
@@ -928,17 +929,16 @@
         cpuFighter.classList.add('shake');
         setTimeout(() => cpuFighter.classList.remove('shake'), 300);
 
-        addLog(`"${pLine}"`, 'player', 'YOU: ');
-
         setTimeout(() => {
           showBubble('cpuBubble', cLine);
+          addLog(`"${cLine}"`, 'cpu', '차경원: ');
 
           const isFinalLine = currentTurn === cpuLines.length - 1;
 
           // 꽃을 던지는 순간 YOU가 즉시 타격받음. 마지막 대사에서는 공격 생략.
           if (!isFinalLine) {
             triggerWeaponAnim('flowerWeapon', 'flower-anim');
-            playSound('punch');
+            setTimeout(() => playSound('punch'), 200);
 
             playerHitCount++;
             if (playerHitCount % 2 === 0 && playerHeartsLeft > 1) {
@@ -954,7 +954,6 @@
 
           // 경원의 대사가 끝날 때까지 공격 버튼 비활성화
           setTimeout(() => {
-            addLog(`"${cLine}"`, 'cpu', '차경원: ');
             currentTurn++;
 
             if (currentTurn >= playerLines.length) {
