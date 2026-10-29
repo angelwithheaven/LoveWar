@@ -938,7 +938,7 @@
           // 꽃을 던지는 순간 YOU가 즉시 타격받음. 마지막 대사에서는 공격 생략.
           if (!isFinalLine) {
             triggerWeaponAnim('flowerWeapon', 'flower-anim');
-            setTimeout(() => playSound('punch'), 200);
+            playSound('punch');
 
             playerHitCount++;
             if (playerHitCount % 2 === 0 && playerHeartsLeft > 1) {
